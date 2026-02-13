@@ -16,6 +16,7 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
+    environment: ${{ matrix.env }}
     strategy:
       matrix:
         env: [dev, prod]
