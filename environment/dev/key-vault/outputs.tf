@@ -5,3 +5,4 @@ output "id" {
 output "name" {
   value = module.foundation.name
 }
+main.tf
