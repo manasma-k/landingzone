@@ -2,6 +2,12 @@ name: Deploy Dev and Prod
 
 on:
   workflow_dispatch:
+    inputs:
+      auto_approve:
+        description: 'Auto-approve apply (skip manual approval)'
+        required: false
+        type: boolean
+        default: false
   pull_request:
     branches:
       - main
@@ -107,4 +113,9 @@ jobs:
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-        run: terraform apply -auto-approve tfplan
+        run: |
+          if [[ "${{ inputs.auto_approve }}" == 'true' ]]; then
+            terraform apply -auto-approve tfplan
+          else
+            terraform apply tfplan
+          fi
