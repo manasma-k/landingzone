@@ -24,20 +24,39 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        env: [dev, prod]
+        include:
+          - env: dev
+            component: foundation
+          - env: dev
+            component: workload
+          - env: prod
+            component: foundation
+          - env: prod
+            component: workload
     defaults:
       run:
-        working-directory: environment/${{ matrix.env }}
+        working-directory: ./environment/${{ matrix.env }}/${{ matrix.component }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check Terraform files
+        id: tf_check
+        run: |
+          if ls *.tf >/dev/null 2>&1; then
+            echo "has_tf=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tf=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Terraform
+        if: steps.tf_check.outputs.has_tf == 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.6
 
       - name: Terraform Init
+        if: steps.tf_check.outputs.has_tf == 'true'
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -48,12 +67,14 @@ jobs:
             -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
-            -backend-config="key=${{ matrix.env }}.tfstate"
+            -backend-config="key=${{ matrix.env }}-${{ matrix.component }}.tfstate"
 
       - name: Terraform Validate
+        if: steps.tf_check.outputs.has_tf == 'true'
         run: terraform validate
 
       - name: Terraform Plan
+        if: steps.tf_check.outputs.has_tf == 'true'
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -62,43 +83,65 @@ jobs:
         run: terraform plan -out=tfplan
 
       - name: Terraform Plan Output
+        if: steps.tf_check.outputs.has_tf == 'true'
         run: terraform show -no-color tfplan > tfplan.txt
 
       - name: Upload Plan
+        if: steps.tf_check.outputs.has_tf == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.env }}-tfplan
+          name: ${{ matrix.env }}-${{ matrix.component }}-tfplan
           path: |
-            environment/${{ matrix.env }}/tfplan
-            environment/${{ matrix.env }}/tfplan.txt
+            environment/${{ matrix.env }}/${{ matrix.component }}/tfplan
+            environment/${{ matrix.env }}/${{ matrix.component }}/tfplan.txt
 
   apply:
     runs-on: ubuntu-latest
     needs: plan
     strategy:
       matrix:
-        env: [dev, prod]
+        include:
+          - env: dev
+            component: foundation
+          - env: dev
+            component: workload
+          - env: prod
+            component: foundation
+          - env: prod
+            component: workload
     environment: ${{ matrix.env }}
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     defaults:
       run:
-        working-directory: environment/${{ matrix.env }}
+        working-directory: ./environment/${{ matrix.env }}/${{ matrix.component }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check Terraform files
+        id: tf_check
+        run: |
+          if ls *.tf >/dev/null 2>&1; then
+            echo "has_tf=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tf=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Terraform
+        if: steps.tf_check.outputs.has_tf == 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.6
 
       - name: Download Plan
+        if: steps.tf_check.outputs.has_tf == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.env }}-tfplan
-          path: environment/${{ matrix.env }}
+          name: ${{ matrix.env }}-${{ matrix.component }}-tfplan
+          path: environment/${{ matrix.env }}/${{ matrix.component }}
 
       - name: Terraform Init
+        if: steps.tf_check.outputs.has_tf == 'true'
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -109,9 +152,10 @@ jobs:
             -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
-            -backend-config="key=${{ matrix.env }}.tfstate"
+            -backend-config="key=${{ matrix.env }}-${{ matrix.component }}.tfstate"
 
       - name: Terraform Apply
+        if: steps.tf_check.outputs.has_tf == 'true'
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
