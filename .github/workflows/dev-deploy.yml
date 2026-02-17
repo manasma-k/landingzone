@@ -40,6 +40,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cleanup Git SSH config
+        run: |
+          git config --local --name-only --get-regexp core\.sshCommand || :
+          git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+
       - name: Check Terraform files
         id: tf_check
         run: |
@@ -117,6 +122,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Cleanup Git SSH config
+        run: |
+          git config --local --name-only --get-regexp core\.sshCommand || :
+          git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
 
       - name: Check Terraform files
         id: tf_check
