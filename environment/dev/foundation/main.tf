@@ -1,9 +1,14 @@
 module "vnet" {
   source = "github.com/manasma-k/foundation?ref=main"
 
-  vnet_name           = var.vnet_name
-  vnet_address_space  = var.vnet_address_space
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  tags                = var.tags
+  inputs = {
+    location = var.location
+    vnets = {
+      (var.vnet_name) = {
+        rg            = var.resource_group_name
+        address_space = var.vnet_address_space
+        tags          = var.tags
+      }
+    }
+  }
 }
