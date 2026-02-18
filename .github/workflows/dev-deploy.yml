@@ -140,16 +140,16 @@ jobs:
       - name: Stage Plan Artifact
         if: steps.tf_check.outputs.has_tf == 'true'
         run: |
-          mkdir -p .plan-artifact
-          cp tfplan .plan-artifact/tfplan
-          cp tfplan.txt .plan-artifact/tfplan.txt
+          mkdir -p "$GITHUB_WORKSPACE/.plan-artifacts/${{ matrix.env }}-${{ matrix.component }}"
+          cp tfplan "$GITHUB_WORKSPACE/.plan-artifacts/${{ matrix.env }}-${{ matrix.component }}/tfplan"
+          cp tfplan.txt "$GITHUB_WORKSPACE/.plan-artifacts/${{ matrix.env }}-${{ matrix.component }}/tfplan.txt"
 
       - name: Upload Plan
         if: steps.tf_check.outputs.has_tf == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.env }}-${{ matrix.component }}-tfplan
-          path: .plan-artifact/
+          path: .plan-artifacts/${{ matrix.env }}-${{ matrix.component }}/
 
   apply:
     runs-on: ubuntu-latest
