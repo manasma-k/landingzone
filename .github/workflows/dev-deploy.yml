@@ -137,14 +137,19 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body: fullBody });
             }
 
+      - name: Stage Plan Artifact
+        if: steps.tf_check.outputs.has_tf == 'true'
+        run: |
+          mkdir -p .plan-artifact
+          cp tfplan .plan-artifact/tfplan
+          cp tfplan.txt .plan-artifact/tfplan.txt
+
       - name: Upload Plan
         if: steps.tf_check.outputs.has_tf == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.env }}-${{ matrix.component }}-tfplan
-          path: |
-            environment/${{ matrix.env }}/${{ matrix.component }}/tfplan
-            environment/${{ matrix.env }}/${{ matrix.component }}/tfplan.txt
+          path: .plan-artifact/
 
   apply:
     runs-on: ubuntu-latest
@@ -219,4 +224,4 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         run: |
-          terraform apply -auto-approve tfplan
+          terraform apply -auto-approve "$GITHUB_WORKSPACE/tfplan"
