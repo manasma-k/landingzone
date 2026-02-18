@@ -1,4 +1,3 @@
-base_module_source  = "git::https://github.com/manasma-k/foundation.git"
 resource_group_name = "rg-dev-network"
 location            = "eastus"
 vnet_name           = "vnet-dev-core"

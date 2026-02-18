@@ -1,7 +1,3 @@
-variable "base_module_source" {
-  type = string
-}
-
 variable "resource_group_name" {
   type = string
 }

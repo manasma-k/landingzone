@@ -1,5 +1,5 @@
 module "vnet" {
-  source = var.base_module_source
+  source = "git::https://github.com/manasma-k/foundation.git"
 
   resource_group_name = var.resource_group_name
   location            = var.location
