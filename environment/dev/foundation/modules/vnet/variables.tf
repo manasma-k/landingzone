@@ -1,3 +1,7 @@
+variable "name" {
+  type = string
+}
+
 variable "resource_group_name" {
   type = string
 }
@@ -6,11 +10,8 @@ variable "location" {
   type = string
 }
 
-variable "vnets" {
-  type = map(object({
-    address_space = list(string)
-    tags          = optional(map(string), {})
-  }))
+variable "address_space" {
+  type = list(string)
 }
 
 variable "tags" {
