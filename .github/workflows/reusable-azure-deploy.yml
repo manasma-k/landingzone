@@ -1,0 +1,154 @@
+name: Reusable Azure Terraform Deploy
+
+on:
+  workflow_call:
+    inputs:
+      terraform_directory:
+        description: Terraform working directory (relative path)
+        required: true
+        type: string
+      state_key:
+        description: Terraform state key name (for backend)
+        required: true
+        type: string
+      terraform_version:
+        description: Terraform version to use
+        required: false
+        type: string
+        default: 1.6.6
+      infra_repo:
+        description: Repository containing Terraform code (owner/repo)
+        required: false
+        type: string
+        default: ''
+      infra_ref:
+        description: Git ref (branch/tag/SHA) for infra repository
+        required: false
+        type: string
+        default: ''
+      run_apply:
+        description: Run terraform apply after successful plan
+        required: false
+        type: boolean
+        default: true
+      auto_approve:
+        description: Auto-approve terraform apply
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      ARM_CLIENT_ID:
+        required: true
+      ARM_CLIENT_SECRET:
+        required: true
+      ARM_SUBSCRIPTION_ID:
+        required: true
+      ARM_TENANT_ID:
+        required: true
+      TFSTATE_RESOURCE_GROUP:
+        required: true
+      TFSTATE_STORAGE_ACCOUNT:
+        required: true
+      TFSTATE_CONTAINER:
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.terraform_directory }}
+    steps:
+      - name: Checkout default repository
+        if: inputs.infra_repo == ''
+        uses: actions/checkout@v4
+
+      - name: Checkout specified infrastructure repository
+        if: inputs.infra_repo != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.infra_repo }}
+          ref: ${{ inputs.infra_ref != '' && inputs.infra_ref || github.ref_name }}
+
+      - name: Check Terraform files
+        id: tf_check
+        run: |
+          if ls *.tf >/dev/null 2>&1; then
+            echo "has_tf=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tf=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Terraform
+        if: steps.tf_check.outputs.has_tf == 'true'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Terraform Init
+        if: steps.tf_check.outputs.has_tf == 'true'
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
+            -backend-config="key=${{ inputs.state_key }}"
+
+      - name: Terraform Validate
+        if: steps.tf_check.outputs.has_tf == 'true'
+        run: terraform validate
+
+      - name: Terraform Plan
+        if: steps.tf_check.outputs.has_tf == 'true'
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        run: terraform plan -out=tfplan
+
+      - name: Publish Plan Summary
+        if: steps.tf_check.outputs.has_tf == 'true'
+        run: |
+          terraform show -no-color tfplan > tfplan.txt
+          {
+            echo "## Terraform Plan"
+            echo
+            echo '```hcl'
+            head -n 400 tfplan.txt
+            echo '```'
+            if [ "$(wc -l < tfplan.txt)" -gt 400 ]; then
+              echo
+              echo "_Plan output truncated in summary._"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Plan Artifact
+        if: steps.tf_check.outputs.has_tf == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: ${{ inputs.terraform_directory }}/tfplan
+
+      - name: Terraform Apply
+        if: steps.tf_check.outputs.has_tf == 'true' && inputs.run_apply
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        run: |
+          if [ "${{ inputs.auto_approve }}" = "true" ]; then
+            terraform apply -auto-approve tfplan
+          else
+            terraform apply tfplan
+          fi

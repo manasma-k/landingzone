@@ -1,0 +1,38 @@
+name: Example - Call Reusable Azure Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      component:
+        description: Terraform component
+        required: true
+        type: choice
+        options:
+          - foundation
+          - workload
+      run_apply:
+        description: Run terraform apply
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    uses: manasma-k/landingzone/.github/workflows/reusable-azure-deploy.yml@main
+    secrets: inherit
+    with:
+      terraform_directory: environment/${{ inputs.target_env }}/${{ inputs.component }}
+      state_key: ${{ inputs.target_env }}-${{ inputs.component }}.tfstate
+      run_apply: ${{ inputs.run_apply }}
+      auto_approve: true
