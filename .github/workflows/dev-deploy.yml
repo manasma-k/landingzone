@@ -3,11 +3,15 @@ name: Deploy Dev and Prod
 on:
   workflow_dispatch:
     inputs:
-      auto_approve:
-        description: 'Auto-approve apply (skip manual approval)'
+      deployment_name:
+        description: Select environment folder to deploy
         required: false
-        type: boolean
-        default: true
+        type: choice
+        default: all
+        options:
+          - all
+          - dev
+          - prod
   pull_request:
     branches:
       - main
@@ -23,6 +27,7 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.deployment_name == 'all' || matrix.env == inputs.deployment_name }}
     strategy:
       fail-fast: false
       matrix:
@@ -167,7 +172,7 @@ jobs:
           - env: prod
             component: workload
     environment: ${{ matrix.env }}
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && (github.event_name != 'workflow_dispatch' || inputs.deployment_name == 'all' || matrix.env == inputs.deployment_name) }}
     defaults:
       run:
         working-directory: ./environment/${{ matrix.env }}/${{ matrix.component }}
