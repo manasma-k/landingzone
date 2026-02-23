@@ -3,6 +3,12 @@
 name: Foundation Resource Deployment
 
 on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       environment_type:
@@ -43,3 +49,10 @@ on:
         required: false
         type: boolean
         default: false
+
+permissions:
+  contents: read
+  id-token: write 
+env:
+  TF_VERSION: 1.6.6 
+  working_directory: 'landingzone/${{ github.event.inputs.deployment_type }}/${{ github.event.inputs.environment_type }}/${{ github.event.inputs.subscription_type }}/${{ github.event.inputs.environment }}'
