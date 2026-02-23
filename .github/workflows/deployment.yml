@@ -81,7 +81,7 @@ jobs:
             {
               "clientId": "${{ secrets.ARM_CLIENT_ID }}",
               "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}",
-              "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}",
+              "subscriptionId": "${{ env.AZ_SUB }}",
               "tenantId": "${{ secrets.ARM_TENANT_ID }}"
             }
 
@@ -93,6 +93,12 @@ jobs:
       # 🔥 Dynamic Backend Injection
       - name: Terraform Init (Dynamic Backend)
         working-directory: ${{ matrix.path }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ env.AZ_SUB }}
+          ARM_USE_CLI: false
         run: |
           terraform init \
             -backend-config="resource_group_name=${{ vars.TFSTATE_RG }}" \
@@ -102,6 +108,12 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ${{ matrix.path }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ env.AZ_SUB }}
+          ARM_USE_CLI: false
         run: terraform plan -out=tfplan
 
       - name: Upload Plan
@@ -157,7 +169,7 @@ jobs:
             {
               "clientId": "${{ secrets.ARM_CLIENT_ID }}",
               "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}",
-              "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}",
+              "subscriptionId": "${{ env.AZ_SUB }}",
               "tenantId": "${{ secrets.ARM_TENANT_ID }}"
             }
 
@@ -175,6 +187,12 @@ jobs:
       #  Same dynamic backend injection
       - name: Terraform Init (Dynamic Backend)
         working-directory: ${{ matrix.path }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ env.AZ_SUB }}
+          ARM_USE_CLI: false
         run: |
           terraform init \
             -backend-config="resource_group_name=${{ vars.TFSTATE_RG }}" \
@@ -184,4 +202,10 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ matrix.path }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ env.AZ_SUB }}
+          ARM_USE_CLI: false
         run: terraform apply -auto-approve tfplan
