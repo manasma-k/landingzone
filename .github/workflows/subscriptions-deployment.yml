@@ -10,12 +10,9 @@ on:
   workflow_dispatch:
     inputs:
       tfvars_file:
-        description: Select tfvars filename to deploy
+        description: Enter tfvars filename to deploy (for example, nonprod.tfvars)
         required: true
-        type: choice
-        options:
-          - nonprod.tfvars
-          - prod1.tfvars
+        type: string
 
 permissions:
   contents: read
