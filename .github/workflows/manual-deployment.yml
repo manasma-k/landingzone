@@ -15,14 +15,6 @@ on:
         description: Subscription folder name (example: subscription-dev-1)
         required: true
         type: string
-      deployment_type:
-        description: Deployment type
-        required: true
-        type: choice
-        options:
-          - foundation
-          - NSG
-        default: foundation
       environment:
         description: GitHub environment used for manual approval
         required: true
@@ -60,9 +52,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          WORKING_DIR="environment/${{ inputs.environment_type }}/${{ inputs.subscription_type }}"
+          WORKING_DIR="environment/${{ github.event.inputs.environment_type }}/${{ github.event.inputs.subscription_type }}"
+          STATE_KEY="${{ github.event.inputs.environment_type }}/${{ github.event.inputs.subscription_type }}.tfstate"
           echo "working_dir=$WORKING_DIR" >> "$GITHUB_OUTPUT"
-          echo "state_key=${{ inputs.environment_type }}/${{ inputs.subscription_type }}/${{ inputs.deployment_type }}.tfstate" >> "$GITHUB_OUTPUT"
+          echo "state_key=$STATE_KEY" >> "$GITHUB_OUTPUT"
 
           if [ ! -d "$WORKING_DIR" ]; then
             echo "Directory '$WORKING_DIR' does not exist"
@@ -101,7 +94,12 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-        run: terraform init -input=false
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
+            -backend-config="key=${{ needs.validate.outputs.state_key }}"
 
       - name: Terraform Validate
         working-directory: ${{ needs.validate.outputs.working_dir }}
@@ -119,14 +117,14 @@ jobs:
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan-${{ inputs.environment_type }}-${{ inputs.subscription_type }}
+          name: tfplan-${{ github.event.inputs.environment_type }}-${{ github.event.inputs.subscription_type }}
           path: ${{ needs.validate.outputs.working_dir }}/tfplan
 
   apply_auto:
     name: Terraform Apply (Auto)
     runs-on: ubuntu-latest
     needs: [validate, plan]
-    if: inputs.auto_approve == true
+    if: ${{ github.event.inputs.auto_approve == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -146,7 +144,7 @@ jobs:
       - name: Download Plan Artifact
         uses: actions/download-artifact@v4
         with:
-          name: tfplan-${{ inputs.environment_type }}-${{ inputs.subscription_type }}
+          name: tfplan-${{ github.event.inputs.environment_type }}-${{ github.event.inputs.subscription_type }}
           path: ${{ needs.validate.outputs.working_dir }}
 
       - name: Terraform Init
@@ -156,7 +154,12 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-        run: terraform init -input=false
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
+            -backend-config="key=${{ needs.validate.outputs.state_key }}"
 
       - name: Terraform Apply
         working-directory: ${{ needs.validate.outputs.working_dir }}
@@ -171,9 +174,9 @@ jobs:
     name: Terraform Apply (Manual Approval)
     runs-on: ubuntu-latest
     needs: [validate, plan]
-    if: inputs.auto_approve != true
+    if: ${{ github.event.inputs.auto_approve != 'true' }}
     environment:
-      name: ${{ inputs.environment }}
+      name: ${{ github.event.inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -193,7 +196,7 @@ jobs:
       - name: Download Plan Artifact
         uses: actions/download-artifact@v4
         with:
-          name: tfplan-${{ inputs.environment_type }}-${{ inputs.subscription_type }}
+          name: tfplan-${{ github.event.inputs.environment_type }}-${{ github.event.inputs.subscription_type }}
           path: ${{ needs.validate.outputs.working_dir }}
 
       - name: Terraform Init
@@ -203,7 +206,12 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-        run: terraform init -input=false
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
+            -backend-config="key=${{ needs.validate.outputs.state_key }}"
 
       - name: Terraform Apply
         working-directory: ${{ needs.validate.outputs.working_dir }}
