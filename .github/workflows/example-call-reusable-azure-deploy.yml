@@ -1,25 +1,31 @@
-name: Example - Call Reusable Azure Deploy
+name: Foundation Resource Deployment
 
 on:
   workflow_dispatch:
     inputs:
-      target_env:
-        description: Target environment
+      environment_type:
+        description: Environment type
         required: true
         type: choice
         options:
           - dev
           - prod
-      component:
-        description: Terraform component
+        default: dev
+      subscription_type:
+        description: Subscription folder name (example: subscription-dev-1)
+        required: true
+        type: string
+      environment:
+        description: GitHub environment used for manual approval
         required: true
         type: choice
         options:
-          - foundation
-          - workload
-      run_apply:
-        description: Run terraform apply
-        required: true
+          - dev
+          - prod
+        default: dev
+      auto_approve:
+        description: Auto-approve apply (skip manual approval)
+        required: false
         type: boolean
         default: false
 
@@ -27,12 +33,191 @@ permissions:
   contents: read
   id-token: write
 
+env:
+  TF_VERSION: 1.6.6
+
 jobs:
-  deploy:
-    uses: manasma-k/landingzone/.github/workflows/reusable-azure-deploy.yml@main
-    secrets: inherit
-    with:
-      terraform_directory: environment/${{ inputs.target_env }}/${{ inputs.component }}
-      state_key: ${{ inputs.target_env }}-${{ inputs.component }}.tfstate
-      run_apply: ${{ inputs.run_apply }}
-      auto_approve: true
+  validate:
+    name: Validate input and path
+    runs-on: ubuntu-latest
+    outputs:
+      working_dir: ${{ steps.paths.outputs.working_dir }}
+      state_key: ${{ steps.paths.outputs.state_key }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve working directory
+        id: paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKING_DIR="environment/${{ github.event.inputs.environment_type }}/${{ github.event.inputs.subscription_type }}"
+          STATE_KEY="${{ github.event.inputs.environment_type }}/${{ github.event.inputs.subscription_type }}.tfstate"
+          echo "working_dir=$WORKING_DIR" >> "$GITHUB_OUTPUT"
+          echo "state_key=$STATE_KEY" >> "$GITHUB_OUTPUT"
+
+          if [ ! -d "$WORKING_DIR" ]; then
+            echo "Directory '$WORKING_DIR' does not exist"
+            exit 1
+          fi
+
+          if ! ls "$WORKING_DIR"/*.tf >/dev/null 2>&1; then
+            echo "No Terraform files found in '$WORKING_DIR'"
+            exit 1
+          fi
+
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ${{ needs.validate.outputs.working_dir }}
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
+            -backend-config="key=${{ needs.validate.outputs.state_key }}"
+
+      - name: Terraform Validate
+        working-directory: ${{ needs.validate.outputs.working_dir }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ needs.validate.outputs.working_dir }}
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ github.event.inputs.environment_type }}-${{ github.event.inputs.subscription_type }}
+          path: ${{ needs.validate.outputs.working_dir }}/tfplan
+
+  apply_auto:
+    name: Terraform Apply (Auto)
+    runs-on: ubuntu-latest
+    needs: [validate, plan]
+    if: ${{ github.event.inputs.auto_approve == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ github.event.inputs.environment_type }}-${{ github.event.inputs.subscription_type }}
+          path: ${{ needs.validate.outputs.working_dir }}
+
+      - name: Terraform Init
+        working-directory: ${{ needs.validate.outputs.working_dir }}
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
+            -backend-config="key=${{ needs.validate.outputs.state_key }}"
+
+      - name: Terraform Apply
+        working-directory: ${{ needs.validate.outputs.working_dir }}
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        run: terraform apply -auto-approve tfplan
+
+  apply_manual:
+    name: Terraform Apply (Manual Approval)
+    runs-on: ubuntu-latest
+    needs: [validate, plan]
+    if: ${{ github.event.inputs.auto_approve != 'true' }}
+    environment:
+      name: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ github.event.inputs.environment_type }}-${{ github.event.inputs.subscription_type }}
+          path: ${{ needs.validate.outputs.working_dir }}
+
+      - name: Terraform Init
+        working-directory: ${{ needs.validate.outputs.working_dir }}
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TFSTATE_CONTAINER }}" \
+            -backend-config="key=${{ needs.validate.outputs.state_key }}"
+
+      - name: Terraform Apply
+        working-directory: ${{ needs.validate.outputs.working_dir }}
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        run: terraform apply tfplan
