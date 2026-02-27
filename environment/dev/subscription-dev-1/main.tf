@@ -12,11 +12,11 @@ module "base" {
 	source = "git::https://github.com/manasma-k/foundation.git?ref=main"
 
 	inputs = {
-		location = local.location
+		location = eastus2
 		tags     = local.tags
 		rgs = {
 			rg_subscription_dev_1 = {
-				location = local.location
+				location = eastus2
 				tags     = local.tags
 			}
 		}
