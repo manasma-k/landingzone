@@ -27,11 +27,6 @@ permissions:
   id-token: write
 env:
   TF_VERSION: 1.5.0
-  WORKING_DIR: environment/${{ github.event.inputs.environment }}/${{ github.event.inputs.subscriptionwise_folder }}
-  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID || secrets.AZURE_CLIENT_ID }}
-  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID || secrets.AZURE_TENANT_ID }}
-  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID || secrets.AZURE_SUBSCRIPTION_ID }}
-  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET || secrets.AZURE_CLIENT_SECRET }}
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -42,11 +37,7 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          auth-type: SERVICE_PRINCIPAL
-          client-id: ${{ env.ARM_CLIENT_ID }}
-          tenant-id: ${{ env.ARM_TENANT_ID }}
-          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
-          client-secret: ${{ env.ARM_CLIENT_SECRET }}
+        creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
         with:
@@ -76,11 +67,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          auth-type: SERVICE_PRINCIPAL
-          client-id: ${{ env.ARM_CLIENT_ID }}
-          tenant-id: ${{ env.ARM_TENANT_ID }}
-          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
-          client-secret: ${{ env.ARM_CLIENT_SECRET }}
+          creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
         with:
