@@ -11,12 +11,17 @@ locals {
 module "base" {
 	source = "git::https://github.com/manasma-k/foundation.git?ref=main"
 
+	providers = {
+		azurerm         = azurerm
+		azurerm.remote2 = azurerm.remote2
+	}
+
 	inputs = {
-		location = eastus2
+		location = local.location
 		tags     = local.tags
 		rgs = {
 			rg_subscription_dev_1 = {
-				location = eastus2
+				location = local.location
 				tags     = local.tags
 			}
 		}

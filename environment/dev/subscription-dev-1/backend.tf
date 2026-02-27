@@ -14,3 +14,8 @@ terraform {
 provider "azurerm" {
 	features {}
 }
+
+provider "azurerm" {
+	alias    = "remote2"
+	features {}
+}
