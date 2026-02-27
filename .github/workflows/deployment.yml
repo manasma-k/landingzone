@@ -28,9 +28,9 @@ permissions:
 env:
   TF_VERSION: 1.5.0
   WORKING_DIR: environment/${{ github.event.inputs.environment }}/${{ github.event.inputs.subscriptionwise_folder }}
-  BACKEND_RESOURCE_GROUP_NAME: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME || secrets.TFSTATE_RESOURCE_GROUP_NAME }}
-  BACKEND_STORAGE_ACCOUNT_NAME: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME || secrets.TFSTATE_STORAGE_ACCOUNT_NAME }}
-  BACKEND_CONTAINER_NAME: ${{ secrets.BACKEND_CONTAINER_NAME || secrets.TFSTATE_CONTAINER_NAME }}
+  BACKEND_RESOURCE_GROUP_NAME: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME || secrets.TFSTATE_RESOURCE_GROUP }}
+  BACKEND_STORAGE_ACCOUNT_NAME: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME || secrets.TFSTATE_STORAGE_ACCOUNT }}
+  BACKEND_CONTAINER_NAME: ${{ secrets.BACKEND_CONTAINER_NAME || secrets.TFSTATE_CONTAINER }}
   BACKEND_KEY: ${{ github.event.inputs.environment }}/${{ github.event.inputs.subscriptionwise_folder }}.tfstate
   ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID || secrets.AZURE_CLIENT_ID }}
   ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID || secrets.AZURE_TENANT_ID }}
