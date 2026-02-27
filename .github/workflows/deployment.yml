@@ -16,6 +16,7 @@ on:
         type: choice
         options:
           - dev
+          - prod
         default: dev
       subscriptionwise_folder:
         description: 'Folder inside selected environment (example: subscription-dev-1)'
