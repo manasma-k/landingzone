@@ -14,24 +14,30 @@ terraform {
 
 provider "azurerm" {
 	features {}
+	subscription_id = var.subscription_id != "" ? var.subscription_id : null
+	tenant_id       = var.tenant_id != "" ? var.tenant_id : null
+	client_id       = var.client_id != "" ? var.client_id : null
 }
 
 provider "azurerm" {
 	alias    = "remote"
 	features {}
+	subscription_id = var.subscription_id != "" ? var.subscription_id : null
+	tenant_id       = var.tenant_id != "" ? var.tenant_id : null
+	client_id       = var.client_id != "" ? var.client_id : null
 }
 
-provider "azurerm" {
-	alias    = "remote2"
-	features {}
+variable "subscription_id" {
+	type    = string
+	default = ""
 }
 
-provider "azurerm" {
-	alias    = "remote3"
-	features {}
+variable "tenant_id" {
+	type    = string
+	default = ""
 }
 
-provider "azurerm" {
-	alias    = "remote4"
-	features {}
+variable "client_id" {
+	type    = string
+	default = ""
 }
