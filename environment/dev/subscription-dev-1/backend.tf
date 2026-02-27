@@ -17,6 +17,21 @@ provider "azurerm" {
 }
 
 provider "azurerm" {
+	alias    = "remote"
+	features {}
+}
+
+provider "azurerm" {
 	alias    = "remote2"
+	features {}
+}
+
+provider "azurerm" {
+	alias    = "remote3"
+	features {}
+}
+
+provider "azurerm" {
+	alias    = "remote4"
 	features {}
 }
