@@ -5,7 +5,7 @@ terraform {
     azurerm = {
       source                = "hashicorp/azurerm"
       version               = ">=3.00.0"
-      configuration_aliases = [azurerm.remote,azurerm.remote2,azurerm.remote3, azurerm.remote4, azurerm.remote5, azurerm.remote6, azurerm.remote7, azurerm.remote8]
+      configuration_aliases = [azurerm.remote]
     }
   }
 
