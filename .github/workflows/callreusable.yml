@@ -1,5 +1,4 @@
 name: Deploy Environment
-
 on:
   push:
     branches: [main]
