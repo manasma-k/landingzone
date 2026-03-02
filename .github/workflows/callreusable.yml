@@ -17,7 +17,7 @@ jobs:
 
       - id: set
         run: |
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          CHANGED=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
 
           DIRS=$(echo "$CHANGED" | grep '^environment/' | awk -F/ '{print $2"/"$3}' | sort -u)
 
@@ -30,7 +30,7 @@ jobs:
             MATRIX='[]'
           fi
 
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
   deploy:
     needs: discover
