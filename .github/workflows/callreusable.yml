@@ -3,6 +3,10 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   discover:
     runs-on: ubuntu-latest
@@ -35,6 +39,10 @@ jobs:
   deploy:
     needs: discover
     if: ${{ fromJson(needs.discover.outputs.matrix).include[0] != null }}
+
+    permissions:
+      contents: read
+      id-token: write
 
     strategy:
       matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
