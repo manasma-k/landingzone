@@ -13,6 +13,10 @@ terraform {
 }
 
 provider "azurerm" {
+	features {}
+}
+
+provider "azurerm" {
 	alias    = "remote"
 	features {}
 	subscription_id = "4eddb456-1696-47e9-b24c-825f989a3704"
