@@ -1,0 +1,47 @@
+name: Deploy Environment
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: set
+        run: |
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+
+          DIRS=$(echo "$CHANGED" | grep '^environments/' | awk -F/ '{print $2"/"$3}' | sort -u)
+
+          MATRIX=$(echo "$DIRS" | jq -R -s -c '
+            split("\n")[:-1] |
+            map(split("/") | {environment: .[0], application: .[1]})
+          ')
+
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: discover
+
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.discover.outputs.matrix) }}
+
+    uses: org/platform-repo/.github/workflows/deploy-azure.yml@v1
+
+    with:
+      environment: ${{ matrix.environment }}
+      application: ${{ matrix.application }}
+
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
