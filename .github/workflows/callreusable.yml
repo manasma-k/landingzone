@@ -19,17 +19,22 @@ jobs:
         run: |
           CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
 
-          DIRS=$(echo "$CHANGED" | grep '^environments/' | awk -F/ '{print $2"/"$3}' | sort -u)
+          DIRS=$(echo "$CHANGED" | grep '^environment/' | awk -F/ '{print $2"/"$3}' | sort -u)
 
           MATRIX=$(echo "$DIRS" | jq -R -s -c '
             split("\n")[:-1] |
             map(split("/") | {environment: .[0], application: .[1]})
           ')
 
+          if [ -z "$MATRIX" ] || [ "$MATRIX" = "[]" ]; then
+            MATRIX='[]'
+          fi
+
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   deploy:
     needs: discover
+    if: ${{ needs.discover.outputs.matrix != '[]' }}
 
     strategy:
       matrix:
