@@ -13,13 +13,6 @@ terraform {
 }
 
 provider "azurerm" {
-	features {}
-	subscription_id = var.subscription_id != "" ? var.subscription_id : null
-	tenant_id       = var.tenant_id != "" ? var.tenant_id : null
-	client_id       = var.client_id != "" ? var.client_id : null
-}
-
-provider "azurerm" {
 	alias    = "remote"
 	features {}
 	subscription_id = 4eddb456-1696-47e9-b24c-825f989a3704
