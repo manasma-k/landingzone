@@ -37,6 +37,21 @@ provider "azurerm" {
 	features {}
 	subscription_id = "4eddb456-1696-47e9-b24c-825f989a3704"
 }
+provider "azurerm" {
+	alias    = "remote5"
+	features {}
+	subscription_id = "4eddb456-1696-47e9-b24c-825f989a3704"
+}
+provider "azurerm" {
+	alias    = "remote6"
+	features {}
+	subscription_id = "4eddb456-1696-47e9-b24c-825f989a3704"
+}
+provider "azurerm" {
+	alias    = "remote7"
+	features {}
+	subscription_id = "4eddb456-1696-47e9-b24c-825f989a3704"
+}
 variable "subscription_id" {
 	type    = string
 	default = ""
