@@ -39,7 +39,7 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
 
-    uses: manasma-k/Deploy-resusable/.github/workflows/deploy-reusable.yml@v1
+    uses: manasma-k/deploy-reusable/.github/workflows/deploy-reusable.yml@v1
     with:
       environment: ${{ matrix.environment }}
       application: ${{ matrix.application }}
