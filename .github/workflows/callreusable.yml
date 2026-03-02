@@ -19,26 +19,26 @@ jobs:
         run: |
           CHANGED=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
 
-          DIRS=$(echo "$CHANGED" | grep '^environment/' | awk -F/ '{print $2"/"$3}' | sort -u)
+          DIRS=$(echo "$CHANGED" | grep '^environment/' | awk -F/ '{print $2"/"$3}' | sort -u || true)
 
           MATRIX=$(echo "$DIRS" | jq -R -s -c '
             split("\n")[:-1] |
-            map(split("/") | {environment: .[0], application: .[1]})
+            map(split("/") | {environment: .[0], application: .[1]}) |
+            {include: .}
           ')
 
-          if [ -z "$MATRIX" ] || [ "$MATRIX" = "[]" ]; then
-            MATRIX='[]'
+          if [ -z "$MATRIX" ] || [ "$MATRIX" = '{"include":[]}' ]; then
+            MATRIX='{"include":[]}'
           fi
 
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
   deploy:
     needs: discover
-    if: ${{ needs.discover.outputs.matrix != '[]' }}
+    if: ${{ fromJson(needs.discover.outputs.matrix).include[0] != null }}
 
     strategy:
-      matrix:
-        include: ${{ fromJson(needs.discover.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
 
     uses: manasma-k/deploy-reusable/.github/workflows/deploy-reusable.yml@v1
 
