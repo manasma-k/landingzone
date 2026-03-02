@@ -35,7 +35,7 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.discover.outputs.matrix) }}
 
-    uses: org/platform-repo/.github/workflows/deploy-azure.yml@v1
+    uses: manasma-k/deploy-reusable/.github/workflows/deploy-reusable.yml@v1
 
     with:
       environment: ${{ matrix.environment }}
