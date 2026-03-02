@@ -14,12 +14,9 @@ module "base" {
 	providers = {
 		azurerm         = azurerm
 		azurerm.remote  = azurerm.remote
-		azurerm.remote2  = azurerm.remote2
+		azurerm.remote2 = azurerm.remote2
 		azurerm.remote3 = azurerm.remote3
 		azurerm.remote4 = azurerm.remote4
-		azurerm.remote5 = azurerm.remote5
-		azurerm.remote6 = azurerm.remote6
-		azurerm.remote7 = azurerm.remote7
 	}
 
 	inputs = {
