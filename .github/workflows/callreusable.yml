@@ -43,8 +43,43 @@ jobs:
 
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
-  deploy:
+  ensure_state_container:
     needs: discover
+    if: ${{ fromJson(needs.discover.outputs.matrix).include[0] != null }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID || secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET || secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID || secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID || secrets.ARM_TENANT_ID }}"}'
+
+      - name: Ensure state container exists
+        env:
+          STATE_RG: ${{ secrets.STATE_RG || secrets.BACKEND_RESOURCE_GROUP_NAME || secrets.TFSTATE_RESOURCE_GROUP }}
+          STATE_STORAGE: ${{ secrets.STATE_STORAGE || secrets.BACKEND_STORAGE_ACCOUNT_NAME || secrets.TFSTATE_STORAGE_ACCOUNT }}
+        run: |
+          KEY=$(az storage account keys list \
+            --resource-group "$STATE_RG" \
+            --account-name "$STATE_STORAGE" \
+            --query "[0].value" \
+            -o tsv)
+
+          az storage container create \
+            --name terraform-state \
+            --account-name "$STATE_STORAGE" \
+            --account-key "$KEY" \
+            --fail-on-exist \
+            --output none || true
+
+  deploy:
+    needs:
+      - discover
+      - ensure_state_container
     if: ${{ fromJson(needs.discover.outputs.matrix).include[0] != null }}
 
     permissions:
