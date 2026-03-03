@@ -102,3 +102,9 @@ variable "tags" {
   description = "Additional resource tags."
   default     = {}
 }
+
+variable "capacity" {
+  type        = number
+  description = "Minimum autoscale capacity."
+  default     = {}
+}
