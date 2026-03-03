@@ -21,7 +21,7 @@ module "application_gateway" {
   backend_ip_addresses                 = ["10.10.0.11","10.10.0.13"]
   #backend_port                         = var.backend_port
   #backend_protocol                     = var.backend_protocol
-  backend_path                         = var.backend_path
+  #backend_path                         = var.backend_path
   #backend_host_name                    = var.backend_host_name
   #pick_host_name_from_backend_address  = var.pick_host_name_from_backend_address
   #listener_host_name                   = var.listener_host_name
