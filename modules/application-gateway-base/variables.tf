@@ -121,3 +121,7 @@ variable "tags" {
   description = "Resource tags."
   default     = {}
 }
+
+variable "capacity" {
+  type        = number
+}
