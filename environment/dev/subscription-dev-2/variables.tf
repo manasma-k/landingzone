@@ -1,54 +1,42 @@
 variable "environment" {
   type        = string
-  description = "Environment name used for tagging."
   default     = "dev"
 }
 
 variable "name" {
   type        = string
-  description = "Name of the Application Gateway."
 }
 
 variable "resource_group_name" {
   type        = string
-  description = "Resource group where Application Gateway will be deployed."
 }
 
 variable "location" {
   type        = string
-  description = "Azure region for the Application Gateway."
 }
 
 variable "subnet_id" {
   type        = string
-  description = "Subnet resource ID dedicated to Application Gateway."
 }
 
 variable "private_frontend_ip_address" {
   type        = string
-  description = "Static private frontend IP address for Application Gateway."
 }
 
 variable "ssl_certificate_secret_id" {
   type        = string
-  description = "Key Vault secret ID containing the TLS certificate for HTTPS listener."
 }
 
 variable "backend_ip_addresses" {
   type        = list(string)
-  description = "Backend private IP addresses for the backend address pool."
 }
 
 variable "backend_port" {
   type        = number
-  description = "Backend service port used by backend HTTP settings."
-  default     = 80
 }
 
 variable "backend_protocol" {
   type        = string
-  description = "Protocol for backend HTTP settings. Allowed values are Http or Https."
-  default     = "Http"
 
   validation {
     condition     = contains(["Http", "Https"], var.backend_protocol)
@@ -58,7 +46,6 @@ variable "backend_protocol" {
 
 variable "backend_path" {
   type        = string
-  description = "Path to use when forwarding traffic to backend."
   default     = "/"
 }
 
