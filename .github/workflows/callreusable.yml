@@ -22,11 +22,11 @@ jobs:
         run: |
           CHANGED=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
 
-          DIRS=$(echo "$CHANGED" | grep '^environment/' | awk -F/ '{print $2"/"$3}' | sort -u || true)
+          DIRS=$(echo "$CHANGED" | awk -F/ '/^environment\/[^/]+\/[^/]+\// {print $2"/"$3}' | sort -u || true)
 
           VALID_DIRS=$(echo "$DIRS" | while IFS= read -r dir; do
             [ -z "$dir" ] && continue
-            if compgen -G "environment/$dir/*.tf" > /dev/null; then
+            if [ -f "environment/$dir/main.tf" ]; then
               echo "$dir"
             fi
           done)
