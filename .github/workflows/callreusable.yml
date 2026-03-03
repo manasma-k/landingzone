@@ -24,7 +24,14 @@ jobs:
 
           DIRS=$(echo "$CHANGED" | grep '^environment/' | awk -F/ '{print $2"/"$3}' | sort -u || true)
 
-          MATRIX=$(echo "$DIRS" | jq -R -s -c '
+          VALID_DIRS=$(echo "$DIRS" | while IFS= read -r dir; do
+            [ -z "$dir" ] && continue
+            if compgen -G "environment/$dir/*.tf" > /dev/null; then
+              echo "$dir"
+            fi
+          done)
+
+          MATRIX=$(echo "$VALID_DIRS" | jq -R -s -c '
             split("\n")[:-1] |
             map(split("/") | {environment: .[0], application: .[1]}) |
             {include: .}
