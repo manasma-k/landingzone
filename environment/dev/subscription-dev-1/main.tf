@@ -34,7 +34,7 @@ module "base" {
 		vnets = {
 			vnet_subscription_dev_1 = {
 				rg            = "rg_subscription_dev_1"
-				address_space = ["10.10.0.0/16"]
+				address_space = ["10.10.0.0/20"]
 				tags          = local.tags
 				subnets = {
 					snet_workload = {
