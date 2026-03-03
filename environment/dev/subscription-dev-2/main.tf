@@ -18,7 +18,7 @@ module "application_gateway" {
   subnet_id                            = "/subscriptions/4eddb456-1696-47e9-b24c-825f989a3704/resourceGroups/rg-dev-network/providers/Microsoft.Network/virtualNetworks/vnet_subscription_dev_1/subnets/snet_workload"
   private_frontend_ip_address          = "10.10.1.9"
   ssl_certificate_secret_id            = var.ssl_certificate_secret_id
-  backend_ip_addresses                 = var.backend_ip_addresses
+  backend_ip_addresses                 = ["10.10.0.11","10.10.0.13"]
   backend_port                         = var.backend_port
   backend_protocol                     = var.backend_protocol
   backend_path                         = var.backend_path
