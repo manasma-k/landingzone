@@ -24,12 +24,12 @@ resource "azurerm_application_gateway" "this" {
     private_ip_address_allocation = "Static"
     subnet_id                     = var.subnet_id
   }
-
+#########Fronted IP#################
   frontend_port {
     name = "port-80"
     port = var.http_port
   }
-
+###################################
   frontend_port {
     name = "port-443"
     port = var.https_port
