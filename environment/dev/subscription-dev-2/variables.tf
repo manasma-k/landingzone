@@ -105,6 +105,4 @@ variable "tags" {
 
 variable "capacity" {
   type        = number
-  description = "Minimum autoscale capacity."
-  default     = {}
 }
