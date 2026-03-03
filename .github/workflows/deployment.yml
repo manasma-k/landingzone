@@ -138,7 +138,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan - ${{ github.event.inputs.environment }} - ${{ github.event.inputs.subscriptionwise_folder }}
-          path: ${{ env.WORKING_DIR }}/tfplan
+          path: ${{ env.WORKING_DIR }}
 
       - name: Terraform init
         working-directory: ${{ env.WORKING_DIR }}
