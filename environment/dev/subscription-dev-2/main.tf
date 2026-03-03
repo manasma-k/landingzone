@@ -12,11 +12,11 @@ locals {
 module "application_gateway" {
   source = "../../../modules/application-gateway-base"
 
-  name                                 = var.name
-  resource_group_name                  = var.resource_group_name
-  location                             = var.location
-  subnet_id                            = var.subnet_id
-  private_frontend_ip_address          = var.private_frontend_ip_address
+  name                                 = app-gateway-test
+  resource_group_name                  = rg-dev-network
+  location                             = eastus
+  subnet_id                            = /subscriptions/4eddb456-1696-47e9-b24c-825f989a3704/resourceGroups/rg-dev-network/providers/Microsoft.Network/virtualNetworks/vnet_subscription_dev_1/subnets/snet_workload
+  private_frontend_ip_address          = 10.10.1.9
   ssl_certificate_secret_id            = var.ssl_certificate_secret_id
   backend_ip_addresses                 = var.backend_ip_addresses
   backend_port                         = var.backend_port
@@ -30,7 +30,6 @@ module "application_gateway" {
   request_timeout                      = var.request_timeout
   sku_name                             = var.sku_name
   sku_tier                             = var.sku_tier
-  min_capacity                         = var.min_capacity
-  max_capacity                         = var.max_capacity
+  capacity                             = 2
   tags                                 = local.tags
 }

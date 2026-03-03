@@ -4,13 +4,9 @@ resource "azurerm_application_gateway" "this" {
   location            = var.location
 
   sku {
-    name = var.sku_name
-    tier = var.sku_tier
-  }
-
-  autoscale_configuration {
-    min_capacity = var.min_capacity
-    max_capacity = var.max_capacity
+    name     = var.sku_name
+    tier     = var.sku_tier
+    capacity = var.capacity
   }
 
   gateway_ip_configuration {

@@ -97,18 +97,6 @@ variable "sku_tier" {
   default     = "Standard_v2"
 }
 
-variable "min_capacity" {
-  type        = number
-  description = "Minimum autoscale capacity."
-  default     = 1
-}
-
-variable "max_capacity" {
-  type        = number
-  description = "Maximum autoscale capacity."
-  default     = 2
-}
-
 variable "tags" {
   type        = map(string)
   description = "Additional resource tags."
